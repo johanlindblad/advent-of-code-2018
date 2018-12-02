@@ -14,7 +14,7 @@ pub fn solve_part1(input: &[String]) -> i32 {
     let (twos, threes) =
         input
             .iter()
-            .map(|line| char_counts(line.to_string()))
+            .map(|line| char_counts(line))
             .map(|counts| (
                  has_with_count(&counts, 2),
                  has_with_count(&counts, 3)
@@ -38,17 +38,17 @@ pub fn solve_part2(input: &[String]) -> String {
         input
             .iter()
             .cartesian_product(input)
-            .find(|(str1, str2)| differ_by_one(str1.to_string(), str2.to_string()));
+            .find(|(str1, str2)| differ_by_one(str1, str2));
 
     match words {
         Some((word1, word2)) => {
-            common_characters(word1.to_string(), word2.to_string())
+            common_characters(word1, word2)
         },
         None => panic!("Expected to find correct words")
     }
 }
 
-fn differ_by_one(str1: String, str2: String) -> bool {
+fn differ_by_one(str1: &str, str2: &str) -> bool {
     let differences =
         str1
             .chars()
@@ -61,7 +61,7 @@ fn differ_by_one(str1: String, str2: String) -> bool {
     differences == 1
 }
 
-fn common_characters(str1: String, str2: String) -> String {
+fn common_characters(str1: &str, str2: &str) -> String {
     str1
         .chars()
         .zip(str2.chars())
@@ -78,7 +78,7 @@ fn has_with_count(counts: &BTreeMap<char, isize>, count: isize) -> bool {
         .any(|&c| c == count)
 }
 
-fn char_counts(str: String) -> BTreeMap<char, isize> {
+fn char_counts(str: &str) -> BTreeMap<char, isize> {
     let mut counts = BTreeMap::new();
 
     str
