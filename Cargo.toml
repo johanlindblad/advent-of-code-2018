@@ -5,6 +5,6 @@ authors = ["Johan Lindblad <johanlindblad@gmail.com>"]
 
 [dependencies]
 aoc-runner = "0.1.0"
-aoc-runner-derive = "0.1.0"
+aoc-runner-derive = "0.1.6"
 itertools = "0.7"
 regex = "1"

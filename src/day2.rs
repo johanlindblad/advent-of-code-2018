@@ -95,7 +95,7 @@ fn char_counts(str: &str) -> BTreeMap<char, isize> {
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1};
+    //use super::{solve_part1};
     #[test]
     fn examples() {
         //assert_eq!(solve_part1(&[1,1,1]), 3);

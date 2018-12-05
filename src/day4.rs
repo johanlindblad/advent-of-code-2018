@@ -119,7 +119,7 @@ pub fn solve_part1(input: &[LogEntry]) -> u32 {
             .max_by(|(_, minutes1), (_, minutes2)| num_minutes(minutes1).cmp(&num_minutes(minutes2)))
             .unwrap();
 
-    let (minute, count) = minutes
+    let (minute, _count) = minutes
         .iter()
         .enumerate()
         .max_by(|(_, count1), (_, count2)| count1.cmp(count2))
@@ -175,7 +175,7 @@ pub fn solve_part2(input: &[LogEntry]) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1};
+    //use super::{solve_part1};
     #[test]
     fn examples() {
     }
