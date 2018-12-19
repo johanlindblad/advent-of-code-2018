@@ -31,112 +31,108 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
     let mut board: Vec<Vec<Square>> = input.clone().to_vec();
     let (height, width) = (board.len(), board[0].len());
 
+    let mut elfs_left = 0;
+    let mut goblins_left = 0;
+
     for row in 0..height {
         for column in 0..width {
             match &board[row][column] {
-                Square::Occupied(_) => unit_positions.insert((row, column)),
-                _ => true
+                Square::Occupied(by) => {
+                    unit_positions.insert((row, column));
+                    if by.friendly { elfs_left += 1 } else { goblins_left += 1};
+                },
+                _ => ()
             };
         }
     }
 
     let adjacent: Vec<(isize, isize)> = vec![(-1, 0), (0, -1), (0, 1), (1, 0)];
 
+    let mut full_round = true;
+
     for round in 1.. {
         let mut new_positions: BTreeSet<(usize, usize)> = BTreeSet::new();
 
-        for (row, column) in unit_positions {
-            let mut attack_at: Option<(usize, usize)> = None;
-            let mut should_move = true;
-            let mut friendly = false;
+        for (mut row, mut column) in unit_positions {
+            let friendly = match &board[row][column] {
+                Square::Wall | Square::Space => continue,
+                Square::Occupied(by) => by.friendly
+            };
 
-            if let Square::Occupied(unit) = &board[row][column] {
-                friendly = unit.friendly;
-                if unit.hit_points <= 0 { continue }
-
-                let mut lowest = 201;
-
-                for (dy, dx) in &adjacent {
-                    let y = (row as isize + dy) as usize;
-                    let x = (column as isize + dx) as usize;
-
-                    if let Square::Occupied(unit) = &board[y][x] {
-                        if unit.friendly == !friendly {
-
-                            match attack_at {
-                                None => attack_at = Some((y, x)),
-                                Some(_) => {
-                                    if unit.hit_points < lowest {
-                                        attack_at = Some((y, x));
-                                        lowest = unit.hit_points;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                continue;
+            if goblins_left == 0 || elfs_left == 0 {
+                full_round = false;
+                break;
             }
 
-            if let None = attack_at {
-                let mut new_position: Option<(usize, usize)> = None;
-                let mut frontier: VecDeque<((usize, usize), Option<(isize, isize)>)> = VecDeque::new();
-                let mut considered = vec![vec![false; width]; height];
+            let mut found_enemy: Option<(usize, usize)> = None;
+            let mut closest = usize::max_value();
+            let mut move_to: Option<(usize, usize)> = None;
+            let mut lowest_hit_points = 201;
 
-                frontier.push_back(((row, column), None));
+            for (dy, dx) in &adjacent {
+                let mut frontier: VecDeque<(usize, (usize, usize))> = VecDeque::new();
+                let first_y = (row as isize + dy) as usize;
+                let first_x = (column as isize + dx) as usize;
+                let mut visited = vec![vec![false; width]; height];
 
-                while let Some(((y, x), first_move)) = frontier.pop_front() {
-                    for (dy, dx) in &adjacent {
-                        let ny = (y as isize + dy) as usize;
-                        let nx = (x as isize + dx) as usize;
-                        if let Square::Space = board[ny][nx] {
-                            let mut first = first_move;
-                            if let None = first { first = Some((*dy, *dx)) }
-                            let new_position = (ny, nx);
-                            if considered[ny][nx] { continue }
-                            frontier.push_back((new_position, first));
-                            considered[ny][nx] = true;
-                        } else if let Square::Occupied(by) = &board[ny][nx] {
-                            if friendly != by.friendly {
-                                let mut first = first_move;
-                                if let None = first { first = Some((*dy, *dx)) }
-                                let (dy, dx) = first.unwrap();
-                                let ny = (row as isize + dy) as usize;
-                                let nx = (column as isize + dx) as usize;
-                                new_position = Some((ny, nx));
-                                frontier.clear();
-                            }
-                        }
-                    }
-                }
+                if let Square::Space = &board[first_y][first_x] {
+                    frontier.push_back((1, (first_y, first_x)));
 
-                if let Some((ny, nx)) = new_position {
-                    let unit = board[row][column].clone();
-                    board[ny][nx] = unit.clone();
-                    board[row][column] = Square::Space;
-                    new_positions.insert((ny, nx));
-                    let mut lowest = 201;
-                    for (dy, dx) in &adjacent {
-                        let y = (ny as isize + dy) as usize;
-                        let x = (nx as isize + dx) as usize;
+                    while let Some((distance, (y, x))) = frontier.pop_front() {
+                        if distance > closest { break };
 
-                        if let Square::Occupied(unit) = &board[y][x] {
-                            if unit.friendly == !friendly {
-                                match attack_at {
-                                    None => attack_at = Some((y, x)),
-                                    Some(_) => {
-                                        if unit.hit_points < lowest {
-                                            attack_at = Some((y, x));
-                                            lowest = unit.hit_points;
-                                        }
-                                    }
+                        for (dy, dx) in &adjacent {
+                            let new_y = (y as isize + dy) as usize;
+                            let new_x = (x as isize + dx) as usize;
+
+                            if let Square::Space = board[new_y][new_x] {
+                                if visited[new_y][new_x] { continue };
+                                visited[new_y][new_x] = true;
+                                frontier.push_back((distance + 1, (new_y, new_x)));
+                            } else if let Square::Occupied(ref by) = board[new_y][new_x] {
+                                if by.friendly == friendly { continue }
+                                if found_enemy.is_none() || (y, x) < found_enemy.unwrap() || distance < closest {
+                                    println!("Can make it to {:?} in {} with {:?}", (y, x), distance, (first_y, first_x));
+                                    found_enemy = Some((y, x));
+                                    closest = distance;
+                                    move_to = Some((first_y, first_x));
                                 }
                             }
                         }
                     }
-                } else { new_positions.insert((row, column)); }
+                } else if let Square::Occupied(ref by) = board[first_y][first_x] {
+                    if by.friendly == friendly { continue }
+                    closest = 0;
+                    move_to = None;
+                    break;
+                }
+            }
+
+            if let Some((new_y, new_x)) = move_to {
+                let unit = board[row][column].clone();
+                board[new_y][new_x] = unit.clone();
+                board[row][column] = Square::Space;
+                new_positions.insert((new_y, new_x));
+                row = new_y;
+                column = new_x;
             } else { new_positions.insert((row, column)); }
+
+            let mut attack_at: Option<(usize, usize)> = None;
+            if closest <= 1 {
+                let mut lowest_points = 201;
+
+                for (dy, dx) in &adjacent {
+                    let ny = (row as isize + *dy) as usize;
+                    let nx = (column as isize + *dx) as usize;
+
+                    if let Square::Occupied(by) = &board[ny][nx] {
+                        if by.friendly != friendly && by.hit_points < lowest_points {
+                            attack_at = Some((ny, nx));
+                            lowest_points = by.hit_points;
+                        }
+                    }
+                }
+            }
 
             if let Some((y, x)) = attack_at {
                 let mut killed = false;
@@ -151,32 +147,15 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
                 if killed {
                     board[y][x] = Square::Space;
                     new_positions.remove(&(y, x));
+
+                    if friendly { goblins_left -=1 } else { elfs_left -= 1 };
                 }
             }
         }
 
         unit_positions = new_positions;
 
-        let mut found_elf = false;
-        let mut found_goblin = false;
-
-        for (row, column) in &unit_positions {
-            if let Square::Occupied(ref unit) = board[*row][*column] {
-                if unit.friendly { found_elf = true }
-                else { found_goblin = true }
-            }
-        }
-
-        for row in &board {
-            println!("{}", row.iter().map(|s| match s {
-                Square::Occupied(unit) => if unit.friendly { 'E' } else { 'G' },
-                Square::Space => '.',
-                Square::Wall => '#'
-            }).collect::<String>());
-        }
-        println!("");
-
-        if found_elf != found_goblin {
+        if elfs_left == 0 || goblins_left == 0 {
             let mut outcome = 0usize;
 
             for row in &board {
@@ -187,8 +166,10 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
                 }
             }
 
-            return outcome * round;
+            if full_round { return outcome * round };
+            return outcome * (round - 1);
         }
+
     }
 
     5
@@ -220,6 +201,19 @@ mod tests {
 
         let input2 = input_generator(raw2);
         assert_eq!(solve_part1(&input2), 36334);
+
+        let raw3 = "#########
+#G......#
+#.E.#...#
+#..##..G#
+#...##..#
+#...#...#
+#.G...G.#
+#.....G.#
+#########";
+
+        let input3 = input_generator(raw3);
+        assert_eq!(solve_part1(&input3), 18740);
     }
 }
 
