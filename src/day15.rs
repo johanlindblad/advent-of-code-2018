@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 #[derive(Debug, Clone)]
 pub struct Unit {
     hit_points: isize,
-    friendly: bool
+    friendly: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +27,23 @@ pub fn input_generator(input: &str) -> Vec<Vec<Square>> {
 
 #[aoc(day15, part1)]
 pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
+    let (_, score) = result(input, 3);
+    score
+}
+
+#[aoc(day15, part2)]
+pub fn solve_part2(input: &Vec<Vec<Square>>) -> usize {
+    for elf_power in 4.. {
+        let (no_losses, score) = result(input, elf_power);
+
+        if no_losses { return score }
+    }
+
+    panic!("Did not finish")
+}
+
+// (elfs_win, score)
+pub fn result(input: &Vec<Vec<Square>>, elf_power: isize) -> (bool, usize) {
     let mut unit_positions: BTreeSet<(usize, usize)> = BTreeSet::new();
     let mut board: Vec<Vec<Square>> = input.clone().to_vec();
     let (height, width) = (board.len(), board[0].len());
@@ -36,8 +53,8 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
 
     for row in 0..height {
         for column in 0..width {
-            match &board[row][column] {
-                Square::Occupied(by) => {
+            match &mut board[row][column] {
+                Square::Occupied(ref mut by) => {
                     unit_positions.insert((row, column));
                     if by.friendly { elfs_left += 1 } else { goblins_left += 1};
                 },
@@ -45,6 +62,7 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
             };
         }
     }
+    let original_elfs = elfs_left;
 
     let adjacent: Vec<(isize, isize)> = vec![(-1, 0), (0, -1), (0, 1), (1, 0)];
 
@@ -67,7 +85,6 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
             let mut found_enemy: Option<(usize, usize)> = None;
             let mut closest = usize::max_value();
             let mut move_to: Option<(usize, usize)> = None;
-            let mut lowest_hit_points = 201;
 
             for (dy, dx) in &adjacent {
                 let mut frontier: VecDeque<(usize, (usize, usize))> = VecDeque::new();
@@ -92,7 +109,7 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
                             } else if let Square::Occupied(ref by) = board[new_y][new_x] {
                                 if by.friendly == friendly { continue }
                                 if found_enemy.is_none() || (y, x) < found_enemy.unwrap() || distance < closest {
-                                    println!("Can make it to {:?} in {} with {:?}", (y, x), distance, (first_y, first_x));
+                                    //println!("Can make it to {:?} in {} with {:?}", (y, x), distance, (first_y, first_x));
                                     found_enemy = Some((y, x));
                                     closest = distance;
                                     move_to = Some((first_y, first_x));
@@ -138,7 +155,12 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
                 let mut killed = false;
 
                 if let &mut Square::Occupied(ref mut target) = &mut board[y][x] {
-                    target.hit_points -= 3;
+                    if friendly {
+                        target.hit_points -= elf_power
+                    } else {
+                        target.hit_points -= 3;
+                    }
+
                     if target.hit_points <= 0 {
                         killed = true;
                     }
@@ -166,18 +188,18 @@ pub fn solve_part1(input: &Vec<Vec<Square>>) -> usize {
                 }
             }
 
-            if full_round { return outcome * round };
-            return outcome * (round - 1);
+            if full_round { return (elfs_left == original_elfs, outcome * round) };
+            return (elfs_left == original_elfs, outcome * (round - 1));
         }
 
     }
 
-    5
+    panic!("Did not finish");
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1, input_generator};
+    use super::{solve_part1, solve_part2, input_generator};
 
     #[test]
     fn examples() {
@@ -190,6 +212,7 @@ mod tests {
 #######";
         let input = input_generator(raw);
         assert_eq!(solve_part1(&input), 27730);
+        assert_eq!(solve_part2(&input), 4988);
 
         let raw2 = "#######
 #G..#E#
@@ -214,6 +237,7 @@ mod tests {
 
         let input3 = input_generator(raw3);
         assert_eq!(solve_part1(&input3), 18740);
+        assert_eq!(solve_part2(&input3), 1140);
     }
 }
 
