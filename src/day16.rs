@@ -190,7 +190,7 @@ pub fn solve_part1(input: &Input) -> usize {
     let (examples, _) = input;
     let mut three_or_more = 0;
 
-    for (before, [num, a, b, c], after) in examples {
+    for (before, [_num, a, b, c], after) in examples {
         let mut matches = 0;
 
         for instr in &op_codes() {
@@ -215,8 +215,6 @@ Instruction::Gtir, Instruction::Gtri, Instruction::Gtrr, Instruction::Eqir, Inst
     let mut options: Vec<BTreeSet<Instruction>> = vec![prototype.clone(); 16];
 
     for (before, [num, a, b, c], after) in examples {
-        let mut matches = 0;
-
         for instr in &op_codes() {
             if options[*num].contains(instr) && execute((*instr).clone(), *a, *b, *c, *before) != *after {
                 options[*num].remove(instr);
