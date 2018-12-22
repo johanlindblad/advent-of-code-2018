@@ -221,8 +221,6 @@ OpCode::Gtir, OpCode::Gtri, OpCode::Gtrr, OpCode::Eqir, OpCode::Eqri, OpCode::Eq
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1};
-
     #[test]
     fn examples() {
     }

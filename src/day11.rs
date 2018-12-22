@@ -80,7 +80,7 @@ pub fn solve_part2(input: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1, power_level};
+    use super::{power_level};
     #[test]
     fn examples() {
         assert_eq!(power_level(122, 79, 57), -5);

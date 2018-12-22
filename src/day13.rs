@@ -186,8 +186,6 @@ pub fn solve(input: &(Board, Elves)) -> ((usize, usize), (usize, usize)) {
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1};
-
     #[test]
     fn examples() {
     }

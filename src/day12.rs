@@ -127,7 +127,6 @@ pub fn solve_part2(input: &Input) -> isize {
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1};
     #[test]
     fn examples() {
     }

@@ -77,7 +77,6 @@ pub fn solve_part1(input: &[RefCell<Point>]) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{input_generator, solve_part1};
     #[test]
     fn examples() {
     }
