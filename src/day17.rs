@@ -37,169 +37,157 @@ pub fn input_generator(input: &str) -> Vec<Vec<Tile>> {
     board
 }
 
+fn drip(from_y: usize, x: usize, board: &mut Vec<Vec<Tile>>) -> bool {
+    for y in from_y..board.len() {
+        if let Tile::Sand = board[y][x] { board[y][x] = Tile::Dried };
+
+        if let Tile::Dried = board[y][x] {
+            board[y][x] = Tile::Dried;
+            continue;
+        };
+
+        let flow_at = y - 1;
+        let mut filled = false;
+        let mut overflows_left = true;
+        let mut overflows_right = true;
+
+        for steps in 1.. {
+            let left = x - steps;
+
+            if let Tile::Clay = board[flow_at][left] {
+                overflows_left = false;
+                break;
+            }
+
+            board[flow_at][left] = Tile::Dried;
+
+            match board[y][left] {
+                Tile::Sand | Tile::Dried => {
+                    if drip(flow_at, left, board) { filled = true }
+                    break;
+                }
+                _ => ()
+            }
+        }
+
+        for steps in 0.. {
+            let right = x + steps;
+
+            if let Tile::Clay = board[flow_at][right] {
+                overflows_right = false;
+                break;
+            }
+
+            board[flow_at][right] = Tile::Dried;
+
+            match board[y][right] {
+                Tile::Sand | Tile::Dried => {
+                    if drip(flow_at, right, board) { filled = true }
+                    break;
+                }
+                _ => ()
+            }
+        }
+
+        if !overflows_left && !overflows_right {
+            filled = true;
+
+            for steps in 1.. {
+                let left = x - steps;
+
+                if let Tile::Dried = board[flow_at][left] {
+                    board[flow_at][left] = Tile::Water;
+                } else { break; }
+            }
+
+            for steps in 0.. {
+                let right = x + steps;
+
+                if let Tile::Dried = board[flow_at][right] {
+                    board[flow_at][right] = Tile::Water;
+                } else { break; }
+            }
+        }
+
+        return filled;
+    }
+
+    false
+}
+
 #[aoc(day17, part1)]
 pub fn solve_part1(input: &Vec<Vec<Tile>>) -> isize {
     let mut board = input.clone();
 
-    let mut stack: Vec<(usize, usize)> = vec![(500, 1)];
 
-    while let Some((x, y)) = stack.pop() {
-        let current = board[y][x].clone();
-        println!("{},{}", y, x);
-        match current {
-            Tile::Sand | Tile::Dried => {
-                board[y][x] = Tile::Dried;
-
-                if y != (board.len() - 1) {
-                    if let Tile::Water = board[y+1][x] {
-                        if let Tile::Dried = board[y][x+1] {
-                            stack.push((x+1, y));
-                        }
-                        if let Tile::Dried = board[y][x-1] {
-                            stack.push((x-1, y));
-                        }
-                    } else {
-                        stack.push((x, y+1));
-                    }
-                }
-                continue;
-            },
-            Tile::Clay | Tile::Water => {
-                let fill_y = y-1;
-                let mut stays = true;
-                let mut overflows_left = false;
-                let mut overflows_right = false;
-
-                let mut left_x = x;
-                let mut right_x = x;
-
-                for dx in 1.. {
-                    if x+dx >= board[0].len() {
-                        for i in 0..board.len() {
-                            board[i].push(Tile::Sand);
-                        }
-                    }
-
-                    match (&board[fill_y][x+dx], &board[fill_y+1][x+dx]) {
-                        (Tile::Clay, _) => {
-                            right_x = x+dx;
-                            break;
-                        },
-                        (other, Tile::Sand) => {
-                            println!("Doesn't stay because of ({:?},{:?}) at {},{}", other, Tile::Sand, x+dx, fill_y+1);
-                            stays = false;
-                            right_x = x+dx+1;
-                            overflows_right = true;
-                            break;
-                        },
-                        (Tile::Sand, Tile::Clay) | (Tile::Sand, Tile::Water) | (Tile::Dried, Tile::Clay) | (Tile::Dried, Tile::Water) => (),
-                        (right, under) => {
-                            for yy in 0..board.len() {
-                                let row = &board[yy];
-                                println!("{}", &row[x-100..=x+100].iter().map(|t| match t {
-                                    Tile::Sand => '.',
-                                    Tile::Clay => '#',
-                                    Tile::Water => '~',
-                                    Tile::Dried => '|'
-                                }).collect::<String>());
-                            }
-
-                            panic!("Unexpected {:?}, {:?} at {},{} (max: {})", right, under, x, y, board.len());
-                        }
-                    }
-                }
-
-                for dx in 1.. {
-                    match (&board[fill_y][x-dx], &board[fill_y+1][x-dx]) {
-                        (Tile::Clay, _) => {
-                            left_x = x-dx;
-                            break;
-                        },
-                        (_, Tile::Sand) => {
-                            stays = false;
-                            left_x = x-dx-1;
-                            overflows_left = true;
-                            break;
-                        },
-                        (Tile::Sand, Tile::Clay) | (Tile::Sand, Tile::Water) | (Tile::Dried, Tile::Clay) | (Tile::Dried, Tile::Water) => (),
-                        (right, under) => {
-                            for yy in 0..board.len() {
-                                let row = &board[yy];
-                                println!("{}", &row[x-100..=x+100].iter().map(|t| match t {
-                                    Tile::Sand => '.',
-                                    Tile::Clay => '#',
-                                    Tile::Water => '~',
-                                    Tile::Dried => '|'
-                                }).collect::<String>());
-                            }
-
-                            let row = &board[y];
-                            println!("{}", &row[x-2..=x+2].iter().map(|t| match t {
-                                Tile::Sand => '.',
-                                Tile::Clay => '#',
-                                Tile::Water => '~',
-                                Tile::Dried => '|'
-                            }).collect::<String>());
-                            panic!("Unexpected {:?}, {:?} at {},{} (max: {})", right, under, x, y, board.len());
-                        }
-                    }
-                }
-
-                println!("{}-{}, {}", left_x, right_x, stays);
-
-
-                if stays {
-                    for x in (left_x+1)..=(right_x-1) {
-                        board[fill_y][x] = Tile::Water;
-                    }
-
-                    stack.push((x, fill_y));
-                } else {
-                    for x in (left_x+1)..=(right_x-1) {
-                        board[fill_y][x] = Tile::Dried;
-                    }
-
-                    if overflows_left {
-                        stack.push((left_x + 1, y));
-                    }
-                    if overflows_right {
-                        stack.push((right_x - 1, y));
-                    }
-                }
-            },
-            ref other => panic!("Unhandled {:?}", other)
-        };
-
-        /*for row in &board {
-            println!("{}", &row[400..=600].iter().map(|t| match t {
-                Tile::Sand => '.',
-                Tile::Clay => '#',
-                Tile::Water => '~',
-                Tile::Dried => '|'
-            }).collect::<String>());
+    loop {
+        if !drip(0, 500, &mut board) {
+            break;
         }
-        println!("");
-        println!("");*/
-            /*println!("{:?}", &board[fill_y-1][495..505]);
-            println!("{:?}", &board[fill_y][495..505]);
-            println!("{:?}", &board[fill_y+1][495..505]);*/
-    };
+    }
 
     let mut sum = 0;
+    board[0][500] = Tile::Sand;
+    let mut has_something = false;
 
-    for row in &board {
+    for i in 0..(board.len()) {
+        let row = &board[i];
+
+
+        for tile in row {
+            match tile {
+                Tile::Clay => has_something = true,
+                _ => ()
+            }
+        }
+
+        if !has_something { continue }
+
         for tile in row {
             match tile {
                 Tile::Water | Tile::Dried => sum += 1,
-                other => ()
+                _other => ()
             }
         }
-        println!("{}", &row.iter().map(|t| match t {
-            Tile::Sand => '.',
-            Tile::Clay => '#',
-            Tile::Water => '~',
-            Tile::Dried => '|'
-        }).collect::<String>());
+    }
+
+    sum
+}
+
+#[aoc(day17, part2)]
+pub fn solve_part2(input: &Vec<Vec<Tile>>) -> isize {
+    let mut board = input.clone();
+
+
+    loop {
+        if !drip(0, 500, &mut board) {
+            break;
+        }
+    }
+
+    let mut sum = 0;
+    board[0][500] = Tile::Sand;
+    let mut has_something = false;
+
+    for i in 0..board.len() {
+        let row = &board[i];
+
+
+        for tile in row {
+            match tile {
+                Tile::Clay => has_something = true,
+                _ => ()
+            }
+        }
+
+        if !has_something { continue }
+
+        for tile in row {
+            match tile {
+                Tile::Water => sum += 1,
+                _other => ()
+            }
+        }
     }
 
     sum
@@ -207,7 +195,7 @@ pub fn solve_part1(input: &Vec<Vec<Tile>>) -> isize {
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1, input_generator};
+    use super::{solve_part1, solve_part2, input_generator};
 
     #[test]
     fn examples() {
@@ -221,6 +209,7 @@ x=504, y=10..13
 y=13, x=498..504";
 
         assert_eq!(solve_part1(&input_generator(raw)), 57);
+        assert_eq!(solve_part2(&input_generator(raw)), 29);
     }
 }
 
