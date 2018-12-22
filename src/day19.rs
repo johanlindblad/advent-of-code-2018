@@ -50,8 +50,7 @@ pub fn solve_part1(input: &Input) -> usize {
 
     while registers[ip] < program.len() {
         let (ref opcode, opa, opb, opc) = program[registers[ip]];
-        let new_registers = execute(opcode.clone(), opa, opb, opc, registers);
-        registers = new_registers;
+        execute(opcode.clone(), opa, opb, opc, &mut registers);
         registers[ip] += 1;
     }
 

@@ -54,106 +54,68 @@ pub fn input_generator(input: &str) -> Box<Input> {
     Box::new((examples, program))
 }
 
-pub fn addr(a: usize, b: usize, c: usize, registers: &mut Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] + registers[b];
-    new_registers
+pub fn addr(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] + registers[b];
 }
 
-pub fn addi(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] + b;
-    new_registers
+pub fn addi(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] + b;
 }
 
-pub fn mulr(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] * registers[b];
-    new_registers
+pub fn mulr(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] * registers[b];
 }
 
-pub fn muli(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] * b;
-    new_registers
+pub fn muli(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] * b;
 }
 
-pub fn banr(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] & registers[b];
-    new_registers
+pub fn banr(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] & registers[b];
 }
 
-pub fn bani(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] & b;
-    new_registers
+pub fn bani(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] & b;
 }
 
-pub fn borr(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] | registers[b];
-    new_registers
+pub fn borr(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] | registers[b];
 }
 
-pub fn bori(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a] | b;
-    new_registers
+pub fn bori(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a] | b;
 }
 
-pub fn setr(a: usize, _b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = registers[a];
-    new_registers
+pub fn setr(a: usize, _b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = registers[a];
 }
 
-pub fn seti(a: usize, _b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = a;
-    new_registers
+pub fn seti(a: usize, _b: usize, c: usize, registers: &mut Registers) {
+    registers[c] = a;
 }
 
-pub fn gtir(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = 0;
-    if a > registers[b] { new_registers[c] = 1 };
-    new_registers
+pub fn gtir(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    if a > registers[b] { registers[c] = 1 } else { registers[c] = 0 };
 }
 
-pub fn gtri(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = 0;
-    if registers[a] > b { new_registers[c] = 1 };
-    new_registers
+pub fn gtri(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    if registers[a] > b { registers[c] = 1 } else { registers[c] = 0 };
 }
 
-pub fn gtrr(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = 0;
-    if registers[a] > registers[b] { new_registers[c] = 1 };
-    new_registers
+pub fn gtrr(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    if registers[a] > registers[b] { registers[c] = 1 } else { registers[c] = 0 };
 }
 
-pub fn eqir(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = 0;
-    if a == registers[b] { new_registers[c] = 1 };
-    new_registers
+pub fn eqir(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    if a == registers[b] { registers[c] = 1 } else { registers[c] = 0 };
 }
 
-pub fn eqri(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = 0;
-    if registers[a] == b { new_registers[c] = 1 };
-    new_registers
+pub fn eqri(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    if registers[a] == b { registers[c] = 1 } else { registers[c] = 0 };
 }
 
-pub fn eqrr(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
-    let mut new_registers = registers.clone();
-    new_registers[c] = 0;
-    if registers[a] == registers[b] { new_registers[c] = 1 };
-    new_registers
+pub fn eqrr(a: usize, b: usize, c: usize, registers: &mut Registers) {
+    if registers[a] == registers[b] { registers[c] = 1 } else { registers[c] = 0 };
 }
 
 fn op_codes() -> [OpCode; 16] {
@@ -165,7 +127,7 @@ fn op_codes() -> [OpCode; 16] {
     ]
 }
 
-pub fn execute(ins: OpCode, a: usize, b: usize, c: usize, registers: Registers) -> Registers {
+pub fn execute(ins: OpCode, a: usize, b: usize, c: usize, registers: &mut Registers) {
     match ins {
         OpCode::Addr => addr(a, b, c, registers),
         OpCode::Addi => addi(a, b, c, registers),
@@ -195,7 +157,10 @@ pub fn solve_part1(input: &Input) -> usize {
         let mut matches = 0;
 
         for instr in &op_codes() {
-            if execute((*instr).clone(), *a, *b, *c, before.to_vec()) == *after {
+            let mut cloned = before.to_vec();
+
+            execute((*instr).clone(), *a, *b, *c, &mut cloned);
+            if *cloned == *after.to_vec() {
                 matches += 1;
             }
         }
@@ -217,8 +182,14 @@ OpCode::Gtir, OpCode::Gtri, OpCode::Gtrr, OpCode::Eqir, OpCode::Eqri, OpCode::Eq
 
     for (before, [num, a, b, c], after) in examples {
         for instr in &op_codes() {
-            if options[*num].contains(instr) && execute((*instr).clone(), *a, *b, *c, before.to_vec()) != *after {
-                options[*num].remove(instr);
+            if options[*num].contains(instr) {
+                let mut cloned = before.to_vec();
+
+                execute((*instr).clone(), *a, *b, *c, &mut cloned);
+
+                if *cloned != *after.to_vec() {
+                    options[*num].remove(instr);
+                }
             }
         }
     }
@@ -242,7 +213,7 @@ OpCode::Gtir, OpCode::Gtri, OpCode::Gtrr, OpCode::Eqir, OpCode::Eqri, OpCode::Eq
     let mut registers: Registers = vec![0; 4];
 
     for [op, a, b, c] in program {
-        registers = execute(mapping[*op].clone(), *a, *b, *c, registers);
+        execute(mapping[*op].clone(), *a, *b, *c, &mut registers);
     }
 
     registers[0]

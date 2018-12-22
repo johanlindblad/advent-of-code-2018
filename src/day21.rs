@@ -24,8 +24,7 @@ pub fn solve_part1(input: &Input) -> usize {
         if pc == 28 {
             return registers[opa];
         }
-        let new_registers = execute(opcode.clone(), opa, opb, opc, registers);
-        registers = new_registers;
+        execute(opcode.clone(), opa, opb, opc, &mut registers);
         registers[ip] += 1;
         num_instructions += 1;
     }
@@ -72,8 +71,7 @@ pub fn solve_part2(input: &Input) -> usize {
                 previous = value;
             }
         }
-        let new_registers = execute(opcode.clone(), opa, opb, opc, registers);
-        registers = new_registers;
+        execute(opcode.clone(), opa, opb, opc, &mut registers);
         registers[ip] += 1;
         num_instructions += 1;
     }
