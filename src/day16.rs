@@ -54,7 +54,7 @@ pub fn input_generator(input: &str) -> Box<Input> {
     Box::new((examples, program))
 }
 
-pub fn addr(a: usize, b: usize, c: usize, registers: Registers) -> Registers {
+pub fn addr(a: usize, b: usize, c: usize, registers: &mut Registers) -> Registers {
     let mut new_registers = registers.clone();
     new_registers[c] = registers[a] + registers[b];
     new_registers

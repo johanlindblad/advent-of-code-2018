@@ -3,7 +3,7 @@ use day16::{OpCode, execute};
 pub type Instruction = (OpCode, usize, usize, usize);
 pub type Input = (usize, Vec<Instruction>);
 
-fn to_opcode(input: &str) -> OpCode {
+pub fn to_opcode(input: &str) -> OpCode {
     match input {
         "addr" => OpCode::Addr,
         "addi" => OpCode::Addi,
