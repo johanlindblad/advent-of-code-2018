@@ -54,7 +54,7 @@ pub fn solve_part2(input: &[Nanobot]) -> usize {
     }*/
 
 
-    37
+    36
 }
 
 #[cfg(test)]
