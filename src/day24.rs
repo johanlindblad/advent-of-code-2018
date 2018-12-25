@@ -97,114 +97,78 @@ pub fn input_generator(input: &str) -> Vec<RefCell<Group>> {
     groups
 }
 
-#[aoc(day24, part1)]
-pub fn solve_part1(input: &Vec<RefCell<Group>>) -> usize {
+pub fn outcome(input: &Vec<RefCell<Group>>, boost: usize) -> (bool, usize) {
     let mut groups = input.clone();
 
-    let mut friendly_left = groups.iter().filter(|ref g| g.borrow().friendly).count();
-    let mut nonfriendly_left = groups.iter().filter(|ref g| !g.borrow().friendly).count();
+    let mut friendly_left;
+    let mut nonfriendly_left;
+
+    if boost > 0 {
+        for i in 0..groups.len() {
+            let mut group = groups[i].borrow_mut();
+            if group.friendly { group.damage += boost }
+        }
+    }
 
     loop {
-        let mut targets: Vec<Option<usize>> = Vec::new();
+        let mut targets: Vec<Option<usize>> = vec![None; groups.len()];
         let mut chosen: Vec<bool> = vec![false; groups.len()];
-        groups.sort_by_key(|ref g| (-(g.borrow().effective_power() as isize), -(g.borrow().initiative as isize)));
+        let indices = (0..groups.len()).collect::<Vec<usize>>();
 
-        for group in groups.iter() {
-            let mut greatest = (0, 0, 0);
+        let choosing_value = |groups: &Vec<RefCell<Group>>, i: usize| -> (isize, isize) { (-(groups[i].borrow().effective_power() as isize), -(groups[i].borrow().initiative as isize)) };
+        let mut in_choosing_order = indices.clone();
+        in_choosing_order.sort_by_key(|&i| choosing_value(&groups, i));
+
+        for index in in_choosing_order {
+            let mut greatest = (1, 0, 0);
             let mut target: Option<usize> = None;
-            let instance = group.borrow().clone();
-            println!("Selecting for {:?}", instance);
+            let group = groups[index].borrow();
 
-            for index in 0..groups.len() {
-                if chosen[index] { continue }
-                let i = groups[index].borrow().clone();
+            for other_index in 0..groups.len() {
+                if index == other_index { continue }
+                if chosen[other_index] { continue }
+                let other_group = groups[other_index].borrow();
+                if other_group.friendly == group.friendly { continue }
 
-                if i.units == 0 { continue }
-
-                if i.friendly != instance.friendly {
-                    let this_score = (instance.damage_to(i.clone()), i.effective_power(), i.initiative);
-                    println!("on {}: {:?}", i.number, this_score);
-
-                    if this_score > greatest {
-                        target = Some(index);
-                        greatest = this_score;
-                    }
+                let scores = (group.damage_to(other_group.clone()), other_group.effective_power(), other_group.initiative);
+                if scores > greatest {
+                    target = Some(other_index);
+                    greatest = scores;
                 }
             }
 
-            targets.push(target);
-            if let Some(num) = target {
-                println!("{:?} chooses {:?}, would deal {}", instance, groups[num].borrow(), instance.damage_to(groups[num].borrow().clone()));
+            targets[index] = target;
+            if let Some(num) = target { chosen[num] = true; }
+        }
 
-                println!("");
-                chosen[num] = true;
+        let mut some_attack = false;
+        let attacking_value = |groups: &Vec<RefCell<Group>>, i: usize| -> isize { -(groups[i].borrow().initiative as isize) };
+        let mut in_attacking_order = indices.clone();
+        in_attacking_order.sort_by_key(|&i| attacking_value(&groups, i));
+
+        for index in in_attacking_order {
+            let group = groups[index].borrow();
+            if group.units == 0 { continue }
+
+            if let Some(target_id) = targets[index] {
+                let mut target = groups[target_id].borrow_mut();
+                if target.units == 0 { panic!("WTF") }
+
+                let total_damage = group.damage_to(target.clone());
+                let remainder = total_damage % target.hit_points;
+                let rounded_damage = total_damage - remainder;
+                let units_killed = std::cmp::min(rounded_damage / target.hit_points, target.units);
+
+                if units_killed > 0 { some_attack = true; }
+                target.units -= units_killed;
             }
         }
 
-        groups.sort_by_key(|ref g| -(g.borrow().initiative as isize));
+        if some_attack == false { return (false, usize::max_value()); }
 
-        for group in groups.iter() {
-            let mut greatest = (0, 0, 0);
-            let mut target: Option<usize> = None;
-            let instance = group.borrow().clone();
-
-            for index in 0..groups.len() {
-                if chosen[index] { continue }
-                let i = groups[index].borrow().clone();
-
-                if i.units == 0 { continue }
-                if targets.contains(&Some(index)) { continue }
-
-                if i.friendly != instance.friendly && instance.damage_to(i.clone()) > 0 {
-                    let this_score = (instance.damage_to(i.clone()), i.effective_power(), i.initiative);
-
-                    if this_score > greatest {
-                        target = Some(index);
-                        greatest = this_score;
-                    }
-                }
-            }
-
-            targets.push(target);
-            if let Some(num) = target {
-                chosen[num] = true;
-            }
-        }
-
-        for i in 0..groups.len() {
-            let group = &groups[i];
-
-            if group.borrow().units == 0 {
-                continue;
-            }
-
-            if let Some(group_id) = targets[i] {
-                let target = &groups[group_id];
-
-                if target.borrow().units == 0 { continue }
-
-                let mut damage = group.borrow().damage_to(target.borrow().clone());
-                let remains = damage % target.borrow().hit_points;
-                damage -= remains;
-
-                let existing_units = target.borrow().units;
-
-                if damage >= existing_units {
-                    target.borrow_mut().units = 0;
-
-                    if target.borrow().friendly {
-                        friendly_left -= 1
-                    } else {
-                        nonfriendly_left -= 1;
-                    }
-                } else {
-                    target.borrow_mut().units -= damage;
-                }
-
-                println!("{:?} DOES {} TO {:?}", group.borrow(), damage, target.borrow());
-            }
-        }
-        println!("{}, {}", friendly_left, nonfriendly_left);
+        groups = groups.into_iter().filter(|ref g| g.borrow().units > 0).collect();
+        friendly_left = groups.iter().filter(|ref g| g.borrow().friendly).count();
+        nonfriendly_left = groups.iter().filter(|ref g| !g.borrow().friendly).count();
 
         if friendly_left == 0 || nonfriendly_left == 0 {
             break
@@ -217,12 +181,47 @@ pub fn solve_part1(input: &Vec<RefCell<Group>>) -> usize {
         sum += group.units;
     }
 
+    (friendly_left > 0, sum)
+}
+
+#[aoc(day24, part1)]
+pub fn solve_part1(input: &Vec<RefCell<Group>>) -> usize {
+    let (_elfs_win, sum) = outcome(input, 0);
     sum
+}
+
+#[aoc(day24, part2)]
+pub fn solve_part2(input: &Vec<RefCell<Group>>) -> usize {
+    let mut hundreds = 0;
+
+    for hundred in 1.. {
+        let boost = 1000 * hundred;
+
+        let cloned_input = input.iter().map(|i| RefCell::new(i.borrow().clone())).collect::<Vec<RefCell<Group>>>();
+        let (elfs_win, _sum) = outcome(&cloned_input, boost);
+
+        if elfs_win {
+            hundreds = hundred - 1;
+            break;
+        }
+    }
+
+    for i in 0..=1000 {
+        let boost = (hundreds * 1000) + i;
+        let cloned_input = input.iter().map(|i| RefCell::new(i.borrow().clone())).collect::<Vec<RefCell<Group>>>();
+        let (elfs_win, sum) = outcome(&cloned_input, boost);
+
+        if elfs_win {
+            return sum;
+        }
+    }
+
+    panic!("Should not get here");
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part1, input_generator};
+    use super::{solve_part1, solve_part2, input_generator, outcome};
 
     #[test]
     fn examples() {
@@ -235,6 +234,9 @@ Infection:
 4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4";
 
         assert_eq!(solve_part1(&input_generator(raw)), 5216);
+
+        assert_eq!(outcome(&input_generator(raw), 1570), (true, 51));
+        assert_eq!(solve_part2(&input_generator(raw)), 51);
     }
 }
 
