@@ -10,6 +10,7 @@ mod tests {
 
 extern crate aoc_runner;
 extern crate regex;
+extern crate disjoint_sets;
 
 #[macro_use]
 extern crate aoc_runner_derive;
@@ -39,5 +40,6 @@ pub mod day21;
 pub mod day22;
 pub mod day23;
 pub mod day24;
+pub mod day25;
 
 aoc_lib!{ year = 2018 }
