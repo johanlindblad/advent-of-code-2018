@@ -95,10 +95,27 @@ fn char_counts(str: &str) -> BTreeMap<char, isize> {
 
 #[cfg(test)]
 mod tests {
-    //use super::{solve_part1};
+    use super::{solve_part1, input_generator, solve_part2};
+
     #[test]
     fn examples() {
-        //assert_eq!(solve_part1(&[1,1,1]), 3);
+        let raw = "abcdef
+bababc
+abbcde
+abcccd
+aabcdd
+abcdee
+ababab";
+        assert_eq!(solve_part1(&input_generator(raw)), 12);
+
+        let raw2 = "abcde
+fghij
+klmno
+pqrst
+fguij
+axcye
+wvxyz";
+        assert_eq!(solve_part2(&input_generator(raw2)), "fgij");
     }
 }
 
