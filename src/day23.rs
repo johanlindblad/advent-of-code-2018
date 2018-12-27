@@ -1,3 +1,6 @@
+use std::process::{Command, Stdio};
+use std::io::Write;
+
 pub type Nanobot = ((isize, isize, isize), usize);
 
 #[aoc_generator(day23)]
@@ -28,33 +31,52 @@ pub fn solve_part1(input: &[Nanobot]) -> usize {
 
 #[aoc(day23, part2)]
 pub fn solve_part2(input: &[Nanobot]) -> usize {
-    println!("[");
-    for ((x, y, z), r) in input {
-        println!(" [{},{},{},{}],", x, y, z, r);
+
+    let intro = "(declare-fun z () Int)
+(declare-fun y () Int)
+(declare-fun x () Int)
+(declare-fun sum () Int)
+(declare-fun dist () Int)".to_string();
+
+    let def_in_range = (0..input.len()).map(|i| format!("(declare-fun in_range_{} () Int)\n", i)).collect::<String>();
+
+    let assert_in_range = input.iter().enumerate().map(|(i, ((x, y, z), r))| {
+        format!("
+(assert (let ((a!1 (+ (ite (>= (- x {0}) 0) (- x {0}) (- (- x {0})))
+              (ite (>= (- y {1}) 0) (- y {1}) (- (- y {1})))
+              (ite (>= (- z {2}) 0) (- z {2}) (- (- z {2}))))))
+  (= in_range_{4} (ite (<= a!1 {3}) 1 0))))\n", x, y, z, r, i)
+    }).collect::<String>();
+
+    let sum_in_range = (0..input.len()).map(|i| format!(" in_range_{}", i)).collect::<String>();
+    let assert_sum = format!("(assert (= sum (+ 0{})))", sum_in_range);
+    let assert_dist = "(assert (= dist
+   (+ (ite (>= x 0) x (- x)) (ite (>= y 0) y (- y)) (ite (>= z 0) z (- z)))))".to_string();
+
+    let outro = "(maximize sum)
+(minimize dist)
+(check-sat)
+(get-value (dist))".to_string();
+
+    let z3_input = [intro, def_in_range, assert_in_range, assert_sum, assert_dist, outro].join("\n");
+
+    let mut child = Command::new("z3")
+        .arg("-in")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    {
+        let stdin = child.stdin.as_mut().unwrap();
+        stdin.write_all(z3_input.as_bytes()).unwrap();
     }
-    println!("]");
-    /*let mut clusters = input.clone();
 
-    for &bot1 in input.iter() {
-        let ((x1, y1, z1), range1) = bot1;
-        println!("{:?}", bot1);
-
-        for &bot2 in input.iter() {
-            if bot1 == bot2 { continue }
-            let ((_x2, _y2, _z2), range2) = bot2;
-            let distance = manhattan(&bot1, &bot2);
-
-            //let dist = ((x1-x2).abs(), (y1-y2).abs(), (z1-z2).abs());
-
-            if distance <= range2 {
-                println!("Has {:?} in range", bot2);
-            }
-
-        }
-    }*/
-
-
-    36
+    let output = child.wait_with_output().unwrap();
+    let output_string = String::from_utf8_lossy(&output.stdout);
+    let dist_line = output_string.lines().skip(1).next().unwrap();
+    let dist = &dist_line[7..dist_line.len() - 2].parse::<usize>().unwrap();
+    *dist
 }
 
 #[cfg(test)]
