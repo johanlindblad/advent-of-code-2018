@@ -48,7 +48,9 @@ fn run(input: &Input, generations: usize) -> isize {
     let mut state = input.initial.clone();
     let patterns = &input.patterns;
 
-    let gens = std::cmp::min(generations, 50_000);
+    let mut n_minus_2;
+    let mut n_minus_1 = 0;
+    let mut n = 0;
 
     let indices = |index: isize, pad: usize| -> (usize, usize) {
         let extra = pad * 128;
@@ -74,7 +76,10 @@ fn run(input: &Input, generations: usize) -> isize {
         }
     };
 
-    for gen in 1..=gens {
+    for gen in 1..=generations {
+        n_minus_2 = n_minus_1;
+        n_minus_1 = n;
+
         let left: isize = 0 - gen as isize - 1;
         let right: isize = num_pots as isize + gen as isize + 2;
 
@@ -103,14 +108,20 @@ fn run(input: &Input, generations: usize) -> isize {
 
         state.swap_with_slice(&mut next_state);
 
-        let sum: isize = (left..right).filter(|&i| val(&state, i, pad as usize) == 1).sum();
+        n = (left..right).filter(|&i| val(&state, i, pad as usize) == 1).sum();
+
         // It eventually reaches a steady state where sum grows by 23 per generation
-        println!("{}: {}", gen, sum);
+        if n - n_minus_1 == n_minus_1 - n_minus_2 {
+            let remaining = generations as isize - gen as isize;
+            let difference = n - n_minus_1;
+            let additional = remaining * difference;
+            return n + additional;
+        }
     }
 
-    let left: isize = 0 - gens as isize - 1;
-    let right: isize = num_pots as isize + gens as isize + 2;
-    let pad = 1 + (gens / 128);
+    let left: isize = 0 - generations as isize - 1;
+    let right: isize = num_pots as isize + generations as isize + 2;
+    let pad = 1 + (generations / 128);
 
     (left..right).filter(|&i| val(&state, i, pad as usize) == 1).sum()
 }
@@ -127,8 +138,28 @@ pub fn solve_part2(input: &Input) -> isize {
 
 #[cfg(test)]
 mod tests {
+    use super::{input_generator, solve_part1};
+
     #[test]
     fn examples() {
+        let raw = "initial state: #..#.#..##......###...###
+
+...## => #
+..#.. => #
+.#... => #
+.#.#. => #
+.#.## => #
+.##.. => #
+.#### => #
+#.#.# => #
+#.### => #
+##.#. => #
+##.## => #
+###.. => #
+###.# => #
+####. => #";
+
+        assert_eq!(solve_part1(&input_generator(raw)), 325);
     }
 }
 
