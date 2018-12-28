@@ -42,11 +42,14 @@ pub struct Elf {
     id: usize
 }
 
-fn parse_line(y: usize, line: &str) -> (Vec<Piece>, Elves) {
+fn parse_line(y: usize, line: &str, line_len: usize) -> (Vec<Piece>, Elves) {
     let mut l = line.to_string();
 
     // cargo-aoc trims input
-    if y == 0 { l = format!("{: >150}", l) }
+    if y == 0 {
+        let remains = line_len - l.len();
+        for _ in 0..remains { l.insert(0, ' '); }
+    }
 
     let piece = |c: char| -> Piece {
         match c {
@@ -89,10 +92,12 @@ pub fn input_generator(input: &str) -> Box<(Board, Elves)> {
     let mut board: Vec<Vec<Piece>> = Vec::new();
     let mut elves: Elves = Vec::new();
 
+    let line_len = input.lines().skip(1).next().unwrap().len();
+
     input
         .lines()
         .enumerate()
-        .map(|(y, l)| parse_line(y, l))
+        .map(|(y, l)| parse_line(y, l, line_len))
         .for_each(|(row, mut new_elves)| {
             board.push(row);
             elves.append(&mut new_elves);
@@ -180,14 +185,38 @@ pub fn solve(input: &(Board, Elves)) -> ((usize, usize), (usize, usize)) {
         if elves.len() == 1 {
             let (y, x) = elves[0].position;
             return (first.unwrap(), (y, x));
+        } else if elves.len() == 0 {
+            // Needed because some examples never end up with a lone elf
+            return (first.unwrap(), (0, 0));
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::{input_generator, solve_part1, solve_part2};
     #[test]
     fn examples() {
+        let raw = "".to_owned() +
+"/->-\\        \n" +
+"|   |  /----\\\n" +
+"| /-+--+-\\  |\n" +
+"| | |  | v  |\n" +
+"\\-+-/  \\-+--/\n" +
+"  \\------/   \n";
+
+        assert_eq!(solve_part1(&input_generator(&raw)), "7,3");
+
+        let raw2 = "".to_owned() +
+"/>-<\\  \n" +
+"|   |  \n" +
+"| /<+-\\\n" +
+"| | | v\n" +
+"\\>+</ |\n" +
+"  |   ^\n" +
+"  \\<->/";
+
+        assert_eq!(solve_part2(&input_generator(&raw2)), "6,4");
     }
 }
 
